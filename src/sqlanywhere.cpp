@@ -100,17 +100,12 @@ void executeWork(uv_work_t *req)
         return;
     }
 
-    a_sqlany_stmt *sqlany_stmt = NULL;
-    if (baton->stmt_obj == NULL)
+    if (baton->stmt_obj->connection == NULL)
     {
-        baton->stmt_obj = new StmtObject();
         baton->stmt_obj->connection = baton->obj;
         baton->obj->statements.push_back(baton->stmt_obj);
     }
-    else
-    {
-        sqlany_stmt = baton->stmt_obj->sqlany_stmt;
-    }
+    a_sqlany_stmt *sqlany_stmt = baton->stmt_obj->sqlany_stmt;
 
     if (sqlany_stmt == NULL && baton->stmt.length() > 0)
     {
@@ -544,6 +539,9 @@ NODE_API_FUNC(Connection::exec)
         baton->execData.push_back(new ExecuteData);
         baton->num_rows = 1;
     }
+
+    // ObjectWrap registers a cleanup hook on construction, which only works on the JS thread
+    baton->stmt_obj = new StmtObject();
 
     uv_work_t *req = new uv_work_t();
     req->data = baton;
@@ -1368,7 +1366,7 @@ void init(Local<Object> exports)
 /********************************/
 {
     uv_mutex_init(&api_mutex);
-    Isolate *isolate = exports->GetIsolate();
+    Isolate *isolate = Isolate::GetCurrent();
     StmtObject::Init(isolate);
     Connection::Init(isolate);
     NODE_SET_METHOD(exports, "createConnection", Connection::NewInstance);

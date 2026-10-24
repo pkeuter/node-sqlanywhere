@@ -965,12 +965,7 @@ Connection::Connection(const FunctionCallbackInfo<Value> &args)
 		//CheckArgType( args[0] );
 		if (args[0]->IsString())
 		{
-			MaybeLocal<String> str = args[0]->ToString(context);
-			int string_len = str.ToLocalChecked()->Utf8Length(isolate);
-			char *buf = new char[string_len + 1];
-			str.ToLocalChecked()->WriteUtf8(isolate, buf);
-			_arg.Reset(isolate, String::NewFromUtf8(isolate, buf).ToLocalChecked());
-			delete[] buf;
+			_arg.Reset(isolate, args[0]->ToString(context).ToLocalChecked());
 		}
 		else if (args[0]->IsObject())
 		{
